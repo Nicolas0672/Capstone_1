@@ -13,7 +13,10 @@ import java.util.List;
 public class Main {
 
     public static void main(String[] args) {
+        TransactionServices services = new TransactionServices();
+        TransactionDisplay display = new TransactionDisplay(services);
 
+        display.display();
 
     }
 

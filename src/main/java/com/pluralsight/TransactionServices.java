@@ -17,9 +17,10 @@ public class TransactionServices {
             LocalTime todayTime = LocalTime.now();
 
             BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(fileLocation, true));
-            bufferedWriter.write("/n");
 
-            bufferedWriter.write(String.format("%s|%s|%s|%s|%.2f", today, todayTime, description, vendor, amount));
+
+            bufferedWriter.write(String.format("\n%s|%s|%s|%s|%.2f", today, todayTime.withNano(0), description, vendor, amount));
+            System.out.println("You have successfully deposited " + amount + "/n");
             bufferedWriter.close();
 
         } catch (IOException e) {
@@ -38,7 +39,7 @@ public class TransactionServices {
                 String[] parts = input.split("\\|");
                 if(parts.length == 5){
                     LocalDate date = LocalDate.parse(parts[0]);
-                    double amount = Double.parseDouble(parts[3]);
+                    double amount = Double.parseDouble(parts[4]);
                     TransactionEntity entity = new TransactionEntity(amount, parts[3], parts[2], parts[1], date);
                     transactionEntityList.add(entity);
                 }

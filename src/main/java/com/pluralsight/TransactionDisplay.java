@@ -11,6 +11,7 @@ public class TransactionDisplay {
 
     public TransactionDisplay(TransactionServices service) {
         this.service = service;
+        service.readFile();
     }
 
     public void display(){
@@ -32,7 +33,7 @@ public class TransactionDisplay {
                 System.out.println("Leaving the app...");
                 hasExit = true;
             } else {
-                System.out.println("Wrong input. Please select a letter corresponding to the provided services");
+                System.out.println("Wrong input. Please select a letter corresponding to the provided services\n");
             }
 
         }
