@@ -20,6 +20,11 @@ public class TransactionEntity {
         this.date = date;
     }
 
+    // Date could be wrong
+    public void display(){
+        System.out.printf("Vendor name: %s\nDescription: %s\nAmount: %.2f\nDate: %s", vendor, description, amount, date);
+    }
+
     public LocalDate getDate() {
         return date;
     }

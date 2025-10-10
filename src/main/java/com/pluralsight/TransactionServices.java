@@ -11,7 +11,11 @@ public class TransactionServices {
     private final List<TransactionEntity> transactionEntityList = new ArrayList<>();
     private final String fileLocation = "data/transaction.csv";
 
-    public void saveToCSV(String description, String vendor, double amount){
+    public List<TransactionEntity> getTransactionEntityList() {
+        return transactionEntityList;
+    }
+
+    public void saveToCSV(String description, String vendor, double amount, String activity){
         try {
             LocalDate today = LocalDate.now();
             LocalTime todayTime = LocalTime.now();
@@ -19,8 +23,9 @@ public class TransactionServices {
             BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(fileLocation, true));
 
 
-            bufferedWriter.write(String.format("\n%s|%s|%s|%s|%.2f", today, todayTime.withNano(0), description, vendor, amount));
-            System.out.println("You have successfully deposited " + amount + "/n");
+            bufferedWriter.write(String.format("\n%s|%s|%s|%s %s|%.2f", today, todayTime.withNano(0), description, vendor, activity, amount));
+            System.out.println("\nCongrats! Your request is completed\n");
+            readFile();
             bufferedWriter.close();
 
         } catch (IOException e) {
