@@ -22,7 +22,7 @@ public class TransactionEntity {
 
     // Date could be wrong
     public void display(){
-        System.out.printf("Vendor name: %s\nDescription: %s\nAmount: %.2f\nDate: %s", vendor, description, amount, date);
+        System.out.printf("Vendor name: %s\nDescription: %s\nAmount: %.2f\nDate: %s\n\n", vendor, description, amount, date);
     }
 
     public LocalDate getDate() {
