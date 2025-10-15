@@ -43,7 +43,7 @@ This project serves as my **Capstone 1** for the *Java Development Fundamentals*
 <img width="523" height="385" alt="ledger_payment" src="https://github.com/user-attachments/assets/434512d3-b9bb-4e2b-83b6-b51bb34030e1" />
 
 ### 📊 Reports Menu
-<img width="458" height="386" alt="reports_menu" src="https://github.com/user-attachments/assets/6e3225a6-f91f-4c07-b573-3693bcf00e94" />
+<img width="465" height="404" alt="reports_menu" src="https://github.com/user-attachments/assets/aadc42d4-3444-4e25-b188-7839595bba8a" />
 
 ### 🔍 Custom Search Interface
 <img width="492" height="387" alt="custom_SEARCH" src="https://github.com/user-attachments/assets/bd9096e9-252e-45c5-bb07-28c7f72b8ef7" />
