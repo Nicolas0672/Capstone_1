@@ -31,25 +31,22 @@ This project serves as my **Capstone 1** for the *Java Development Fundamentals*
 ## 🖼️ Application Walkthrough
 
 ### 🏠 Home Screen
-[SCREENSHOT: Home screen showing D/P/L/X options]
+<img width="284" height="164" alt="homepage" src="https://github.com/user-attachments/assets/1d1394a2-15ef-4163-a3d2-63e16839643e" />
 
 ### 💰 Adding a Deposit
-[SCREENSHOT: Deposit form with prompts]
+<img width="302" height="275" alt="deposit" src="https://github.com/user-attachments/assets/354f697f-6b78-42d1-80b4-56edbe5eb288" />
 
 ### 💳 Making a Payment
-[SCREENSHOT: Payment screen with vendor lookup]
+<img width="493" height="411" alt="payment" src="https://github.com/user-attachments/assets/325b98c3-5e53-43b2-aef8-f29af9bdaf4a" />
 
 ### 📖 Ledger Display
-[SCREENSHOT: Transaction history]
+<img width="523" height="385" alt="ledger_payment" src="https://github.com/user-attachments/assets/434512d3-b9bb-4e2b-83b6-b51bb34030e1" />
 
 ### 📊 Reports Menu
-[SCREENSHOT: Reports menu with options 1-6]
+<img width="465" height="404" alt="reports_menu" src="https://github.com/user-attachments/assets/aadc42d4-3444-4e25-b188-7839595bba8a" />
 
 ### 🔍 Custom Search Interface
-[SCREENSHOT: Custom search prompts]
-
-### 📈 Search Results Display
-[SCREENSHOT: Filtered results]
+<img width="492" height="387" alt="custom_SEARCH" src="https://github.com/user-attachments/assets/bd9096e9-252e-45c5-bb07-28c7f72b8ef7" />
 
 ---
 
