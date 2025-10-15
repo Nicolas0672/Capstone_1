@@ -6,15 +6,11 @@ import java.time.LocalTime;
 import java.time.Month;
 import java.time.format.DateTimeParseException;
 import java.util.*;
+import com.pluralsight.cli.console;
 
 public class TransactionServices {
 
-    //    private final List<TransactionEntity> transactionEntityList = new ArrayList<>();
     private final String fileLocation = "data/transaction.csv";
-
-//    public List<TransactionEntity> getTransactionEntityList() {
-//        return transactionEntityList;
-//    }
 
     public void saveToCSV(String description, String vendor, double amount, String activity) {
         try {
@@ -22,10 +18,9 @@ public class TransactionServices {
             LocalTime todayTime = LocalTime.now();
 
             BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(fileLocation, true));
-
-
+            // Format correctly
             bufferedWriter.write(String.format("\n%s|%s|%s %s|%s|%.2f", today, todayTime.withNano(0), description, activity, vendor, amount));
-            System.out.println("\nCongrats! Your request is completed\n");
+            console.Success("\nCongrats! Your request is completed\n");
 
             bufferedWriter.close();
 
@@ -52,7 +47,7 @@ public class TransactionServices {
                 }
             }
         } catch (IOException e) {
-            System.out.println("File not found");
+            console.Deny("File not found");
         }
         return entityList;
     }

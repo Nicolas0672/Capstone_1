@@ -1,11 +1,13 @@
 package com.pluralsight;
 
 import java.io.BufferedWriter;
+import java.io.Console;
 import java.io.FileWriter;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.*;
+import com.pluralsight.cli.console;
 
 public class TransactionDisplay {
     private final TransactionServices service;
@@ -16,15 +18,16 @@ public class TransactionDisplay {
     public TransactionDisplay(TransactionServices service) {
         this.service = service;
         transactionEntityList = service.readFile();
+
     }
 
     public void display() {
-        System.out.println("\tWelcome to Financial Transaction\n");
+        System.out.println("\n==== Welcome to Financial Transaction ====\n");
         System.out.println("Please select the services provided: ");
         boolean hasExit = false;
 
         while (!hasExit) {
-            System.out.println("D) Add Deposit\nP) Make Payment(Debit)\nL) Ledger\nX) Exit\n");
+            console.Information("D) Add Deposit\nP) Make Payment(Debit)\nL) Ledger\nX) Exit\n");
             String input = scanner.nextLine();
 
             if (input.equalsIgnoreCase("D")) {
@@ -37,7 +40,7 @@ public class TransactionDisplay {
                 System.out.println("Leaving the app...");
                 hasExit = true;
             } else {
-                System.out.println("Wrong input. Please select a letter corresponding to the provided services\n");
+                console.Deny("Wrong input. Please select a letter corresponding to the provided services\n");
             }
 
         }
@@ -47,7 +50,7 @@ public class TransactionDisplay {
         boolean isValid = false;
         System.out.println("\nPlease enter your name: ");
         String name = scanner.nextLine();
-        System.out.println("Please enter invoice: ");
+        System.out.println("Please describe the purpose of this deposit:");
         String invoice = scanner.nextLine();
 
         double depositAmount = 0;
@@ -59,21 +62,22 @@ public class TransactionDisplay {
                 depositAmount = scanner.nextDouble();
                 scanner.nextLine();
                 if(depositAmount <= 0){
-                    System.out.println("Please enter a positive amount!");
+                    console.Warning("Please enter a positive amount!");
                 } else {
                     isValid = true;
                 }
 
             } catch (NumberFormatException e) {
-                System.out.println("Wrong format. Please enter in numbers");
+                console.Deny("Wrong format. Please enter in numbers");
             }
         }
         service.saveToCSV(invoice, name, depositAmount, "deposit");
     }
 
     public void displayPayment() {
-        System.out.println("Here is all payments you need to make\n");
+        console.Information("Here is all payments you need to make");
         List<TransactionEntity> ongoingPayments = new ArrayList<>();
+        displayFormat();
 
         // Loop through the entire list and only store if amounts is less than 0
         for (TransactionEntity transaction : transactionEntityList) {
@@ -87,34 +91,33 @@ public class TransactionDisplay {
         double amount = 0;
         String description = "";
         String vendorName = "";
-        double totalOwed = 0;
 
         while (!isValid) {
             try {
-                System.out.println("Please enter the vendor name owed: ");
+                System.out.print("\nPlease enter the vendor name owed: ");
                 vendorName = scanner.nextLine();
-                System.out.println("Please enter description of product owed: ");
+                System.out.print("Please enter description of product owed: ");
                 description = scanner.nextLine();
                 double totalPayment = service.totalPayment(ongoingPayments,vendorName, description);
-                System.out.printf("Amount Owed: %.2f\nPlease enter your payment amount: ", totalPayment);
-                amount = scanner.nextDouble();
-                scanner.nextLine();
-
-                // Checks for validation of vendor name and amount
-
                 if(totalPayment == 0){
-                    System.out.println("Vendor name not found! Please try again\n");
+                    console.Warning("Vendor name not found! Please try again\n");
                 } else if(totalPayment - amount < 0){
-                    System.out.print("You have exceeded total payment amount! Please try again\n");
+                    console.Warning("You have exceeded total payment amount! Please try again\n");
                 } else {
-                    System.out.printf("\nTotal amount owed for %s: %.2f\n", vendorName, totalPayment);
-                    System.out.printf("Amount paid: %.4f", amount);
+                    console.Information("Total amount owed for %s: %.2f", vendorName, totalPayment);
+                    System.out.print("Please enter your payment: ");
+                    amount = scanner.nextDouble();
+                    scanner.nextLine();
+                    console.Information("Remaining amount: %.2f", amount - totalPayment);
                     amount -= totalPayment;
                     isValid = true;
                 }
 
+
+                // Checks for validation of vendor name and amount
+
             } catch (NumberFormatException e) {
-                System.out.println("Please enter a number");
+                console.Deny("Please enter a number");
             }
         }
         service.saveToCSV(description, vendorName, amount, amount == 0 ? "paid" : "payment");
@@ -123,10 +126,10 @@ public class TransactionDisplay {
 
 
     // This method displays the Ledger screen. It dynamically filters all transactions into:
-// 1) Deposits (positive amounts or description includes "deposit")
-// 2) Payments (negative amounts or description includes "payment")
-// The user can choose to view all, deposits, payments, or detailed reports.
-// Transactions are sorted by newest date first for clarity.
+    // 1) Deposits (positive amounts or description includes "deposit")
+    // 2) Payments (negative amounts or description includes "payment")
+    // The user can choose to view all, deposits, payments, or detailed reports.
+    // Transactions are sorted by newest date first for clarity.
 
     public void displayLedger() {
         // read file to make sure it is up-to-date
@@ -142,7 +145,8 @@ public class TransactionDisplay {
         // Checking for negative, ongoing payments or deposit payments
         for (TransactionEntity entity : allTransactionEntityList) {
             String description = entity.getDescription();
-            // split the description and check if it is still an ongoing payment
+            // split the description and check if it is still an ongoing based on the last word of
+            // of description fields
             String[] parts = description.split(" ");
             if (entity.getAmount() < 0 || parts[parts.length - 1].equalsIgnoreCase("payment")) {
                 remainingTransactionPayments.add(entity);
@@ -154,35 +158,38 @@ public class TransactionDisplay {
         boolean isValid = false;
         while (!isValid) {
             System.out.println("Please choose the services provided: \n");
-            System.out.println("A) All\nD) Deposits\nP) Payments\nR) Reports\n");
+            console.Information("A) All\nD) Deposits\nP) Payments\nR) Reports\n");
             String input = scanner.nextLine();
 
             if (input.equalsIgnoreCase("A")) {
+                displayFormat();
                 service.displayEntries(allTransactionEntityList);
                 isValid = true;
             } else if (input.equalsIgnoreCase("D")) {
+                displayFormat();
                 service.displayEntries(depositTransactionList);
                 isValid = true;
             } else if (input.equalsIgnoreCase("P")) {
+                displayFormat();
                 service.displayEntries(remainingTransactionPayments);
                 isValid = true;
             } else if (input.equalsIgnoreCase("R")) {
                 displayReports(allTransactionEntityList);
                 isValid = true;
             } else if (input.equalsIgnoreCase("H")) {
-                System.out.println("Going back home...");
+                console.Information("Going back home...");
                 return;
             } else {
-                System.out.println("Invalid options! Please try again");
+                console.Deny("Invalid options! Please try again");
             }
         }
     }
 
     // The Reports menu provides several filtered views of transactions:
-// 1–4: Time-based reports (month-to-date, previous month, etc.)
-// 5: Vendor search report
-// 6: Custom user-defined search
-// It uses a switch-case structure to route to the correct service method.
+    // 1–4: Time-based reports (month-to-date, previous month, etc.)
+    // 5: Vendor search report
+    // 6: Custom user-defined search
+    // It uses a switch-case structure to route to the correct service method.
 
     public void displayReports(List<TransactionEntity> allTransactionList) {
         boolean isValid = false;
@@ -190,7 +197,7 @@ public class TransactionDisplay {
         while (!isValid) {
             try {
                 System.out.println("Please select the provided services: \n");
-                System.out.println("1) Month To Date\n2) Previous Month\n3) Year To Date\n4) Previous Year\n5) Search by Vendor\n6) Custom search\n0) Back\n");
+                console.Information("1) Month To Date\n2) Previous Month\n3) Year To Date\n4) Previous Year\n5) Search by Vendor\n6) Custom search\n0) Back\n");
                 int choice = scanner.nextInt();
                 scanner.nextLine();
                 switch (choice) {
@@ -224,11 +231,12 @@ public class TransactionDisplay {
                         break;
                     case 0: return;
                     default:
-                        System.out.println("Incorrect options. Please try again! ");
+                        console.Deny("Incorrect options. Please try again! ");
                 }
 
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid options! Please try again");
+            } catch (InputMismatchException e) {
+                console.Deny("Invalid options! Please try again");
+                scanner.nextLine();
             }
         }
     }
@@ -251,17 +259,17 @@ public class TransactionDisplay {
                 searchedList.addAll(transactionMap.get(input));
                 isValid = true;
             } else {
-                System.out.println("Vendor name not found! Please try again\n");
+                console.Warning("Vendor name not found! Please try again\n");
             }
         }
         displayList(searchedList);
     }
 
     // This method performs a dynamic "Custom Search" by chaining filters based on user input.
-// For each field (start date, end date, description, vendor, amount):
-// - If the user enters a value, we filter by that field.
-// - If left empty, that field is ignored.
-// This approach allows flexible, multi-criteria searching similar to database querying.
+    // For each field (start date, end date, description, vendor, amount):
+    // - If the user enters a value, we filter by that field.
+    // - If left empty, that field is ignored.
+    // This approach allows flexible, multi-criteria searching similar to database querying.
 
     public void displayCustomSearch(List<TransactionEntity> allTransactionList) {
 
@@ -276,7 +284,7 @@ public class TransactionDisplay {
                 filteredList = service.customSearch(startInput, filteredList, "startDate");
                 break;
             } catch (DateTimeParseException e) {
-                System.out.println("Invalid date. Try again.");
+                console.Warning("Invalid date. Try again.");
             }
         }
 
@@ -288,7 +296,7 @@ public class TransactionDisplay {
                 filteredList = service.customSearch(endInput, filteredList, "endDate");
                 break;
             } catch (DateTimeParseException e) {
-                System.out.println("Invalid date. Try again.");
+                console.Warning("Invalid date. Try again.");
             }
         }
 
@@ -309,13 +317,17 @@ public class TransactionDisplay {
                 filteredList = service.customSearch(amountInput, filteredList, "amount");
                 break;
             } catch (NumberFormatException e) {
-                System.out.println("Invalid amount. Try again.");
+                console.Warning("Invalid amount. Try again.");
             }
         }
-
-        System.out.println("Here are your custom search results:\n");
-        for (TransactionEntity entity : filteredList) {
-            entity.display();
+        if(filteredList.isEmpty()){
+            console.Information("No search results was found!");
+        } else {
+            console.Information("Here are your custom search results");
+            displayFormat();
+            for (TransactionEntity entity : filteredList) {
+                entity.display();
+            }
         }
     }
 
@@ -327,6 +339,11 @@ public class TransactionDisplay {
     private Double parseAmountOrNull(String input) {
         if (input == null || input.isEmpty()) return null;
         return Double.parseDouble(input);
+    }
+
+    public void displayFormat(){
+        System.out.printf("\n%-20s %-30s %-12s %-15s\n", "Vendor", "Description", "Amount", "Date");
+        System.out.println("--------------------------------------------------------------------------------");
     }
 
 }

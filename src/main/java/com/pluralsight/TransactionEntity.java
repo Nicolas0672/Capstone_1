@@ -1,6 +1,7 @@
 package com.pluralsight;
 
 import java.time.LocalDate;
+import com.pluralsight.cli.console;
 
 public class TransactionEntity {
     private LocalDate date;
@@ -20,10 +21,11 @@ public class TransactionEntity {
         this.date = date;
     }
 
-    // Date could be wrong
-    public void display(){
-        System.out.printf("Vendor name: %s\nDescription: %s\nAmount: %.2f\nDate: %s\n\n", vendor, description, amount, date);
+    public void display() {
+        console.Success("%-20s %-30s $%-11.2f %-15s", vendor, description, amount, date);
     }
+
+
 
     public LocalDate getDate() {
         return date;
