@@ -1,10 +1,7 @@
 package com.pluralsight;
 
-import java.io.BufferedWriter;
-import java.io.Console;
-import java.io.FileWriter;
-import java.time.DateTimeException;
-import java.time.LocalDate;
+import java.io.*;
+import java.time.*;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 import com.pluralsight.cli.console;
@@ -14,13 +11,17 @@ public class TransactionDisplay {
     private final Scanner scanner = new Scanner(System.in);
     private final List<TransactionEntity> transactionEntityList;
 
-
+    // ------------------------------------------
+    // Constructor
+    // ------------------------------------------
     public TransactionDisplay(TransactionServices service) {
         this.service = service;
-        transactionEntityList = service.readFile();
-
+        this.transactionEntityList = service.readFile();
     }
 
+    // ------------------------------------------
+    // Main Menu
+    // ------------------------------------------
     public void display() {
         System.out.println("\n==== Welcome to Financial Transaction ====\n");
         System.out.println("Please select the services provided: ");
@@ -42,10 +43,12 @@ public class TransactionDisplay {
             } else {
                 console.Deny("Wrong input. Please select a letter corresponding to the provided services\n");
             }
-
         }
     }
 
+    // ------------------------------------------
+    // Deposit Section
+    // ------------------------------------------
     public void depositDisplay() {
         boolean isValid = false;
         System.out.println("\nPlease enter your name: ");
@@ -57,11 +60,10 @@ public class TransactionDisplay {
 
         while (!isValid) {
             try {
-
                 System.out.println("Please enter deposit amount: ");
                 depositAmount = scanner.nextDouble();
                 scanner.nextLine();
-                if(depositAmount <= 0){
+                if (depositAmount <= 0) {
                     console.Warning("Please enter a positive amount!");
                 } else {
                     isValid = true;
@@ -74,12 +76,14 @@ public class TransactionDisplay {
         service.saveToCSV(invoice, name, depositAmount, "deposit");
     }
 
+    // ------------------------------------------
+    // Payment Section
+    // ------------------------------------------
     public void displayPayment() {
         console.Information("Here is all payments you need to make");
         List<TransactionEntity> ongoingPayments = new ArrayList<>();
         displayFormat();
 
-        // Loop through the entire list and only store if amounts is less than 0
         for (TransactionEntity transaction : transactionEntityList) {
             if (transaction.getAmount() < 0) {
                 ongoingPayments.add(transaction);
@@ -98,10 +102,11 @@ public class TransactionDisplay {
                 vendorName = scanner.nextLine();
                 System.out.print("Please enter description of product owed: ");
                 description = scanner.nextLine();
-                double totalPayment = service.totalPayment(ongoingPayments,vendorName, description);
-                if(totalPayment == 0){
+
+                double totalPayment = service.totalPayment(ongoingPayments, vendorName, description);
+                if (totalPayment == 0) {
                     console.Warning("Vendor name not found! Please try again\n");
-                } else if(totalPayment - amount < 0){
+                } else if (totalPayment - amount < 0) {
                     console.Warning("You have exceeded total payment amount! Please try again\n");
                 } else {
                     console.Information("Total amount owed for %s: %.2f", vendorName, totalPayment);
@@ -113,9 +118,6 @@ public class TransactionDisplay {
                     isValid = true;
                 }
 
-
-                // Checks for validation of vendor name and amount
-
             } catch (NumberFormatException e) {
                 console.Deny("Please enter a number");
             }
@@ -123,30 +125,18 @@ public class TransactionDisplay {
         service.saveToCSV(description, vendorName, amount, amount == 0 ? "paid" : "payment");
     }
 
-
-
-    // This method displays the Ledger screen. It dynamically filters all transactions into:
-    // 1) Deposits (positive amounts or description includes "deposit")
-    // 2) Payments (negative amounts or description includes "payment")
-    // The user can choose to view all, deposits, payments, or detailed reports.
-    // Transactions are sorted by newest date first for clarity.
-
+    // ------------------------------------------
+    // Ledger Section
+    // ------------------------------------------
     public void displayLedger() {
-        // read file to make sure it is up-to-date
-
         List<TransactionEntity> allTransactionEntityList = service.readFile();
-        // Filter by newest entry first
         allTransactionEntityList.sort(Comparator.comparing(TransactionEntity::getDate).reversed());
 
         List<TransactionEntity> remainingTransactionPayments = new ArrayList<>();
         List<TransactionEntity> depositTransactionList = new ArrayList<>();
 
-
-        // Checking for negative, ongoing payments or deposit payments
         for (TransactionEntity entity : allTransactionEntityList) {
             String description = entity.getDescription();
-            // split the description and check if it is still an ongoing based on the last word of
-            // of description fields
             String[] parts = description.split(" ");
             if (entity.getAmount() < 0 || parts[parts.length - 1].equalsIgnoreCase("payment")) {
                 remainingTransactionPayments.add(entity);
@@ -185,40 +175,35 @@ public class TransactionDisplay {
         }
     }
 
-    // The Reports menu provides several filtered views of transactions:
-    // 1–4: Time-based reports (month-to-date, previous month, etc.)
-    // 5: Vendor search report
-    // 6: Custom user-defined search
-    // It uses a switch-case structure to route to the correct service method.
-
+    // ------------------------------------------
+    // Reports Section
+    // ------------------------------------------
     public void displayReports(List<TransactionEntity> allTransactionList) {
         boolean isValid = false;
 
         while (!isValid) {
             try {
                 System.out.println("Please select the provided services: \n");
-                console.Information("1) Month To Date\n2) Previous Month\n3) Year To Date\n4) Previous Year\n5) Search by Vendor\n6) Custom search\n0) Back\n");
+                console.Information(
+                        "1) Month To Date\n2) Previous Month\n3) Year To Date\n4) Previous Year\n5) Search by Vendor\n6) Custom search\n0) Back\n"
+                );
                 int choice = scanner.nextInt();
                 scanner.nextLine();
                 switch (choice) {
                     case 1:
-                        List<TransactionEntity> monthToDate = service.monthToDate(allTransactionList);
-                        displayList(monthToDate);
+                        displayList(service.monthToDate(allTransactionList));
                         isValid = true;
                         break;
                     case 2:
-                        List<TransactionEntity> prevMonth = service.previousMonth(allTransactionList);
-                        displayList(prevMonth);
+                        displayList(service.previousMonth(allTransactionList));
                         isValid = true;
                         break;
                     case 3:
-                        List<TransactionEntity> yearToDate = service.yearToDate(allTransactionList);
-                        displayList(yearToDate);
+                        displayList(service.yearToDate(allTransactionList));
                         isValid = true;
                         break;
                     case 4:
-                        List<TransactionEntity> prevYear = service.previousYear(allTransactionList);
-                        displayList(prevYear);
+                        displayList(service.previousYear(allTransactionList));
                         isValid = true;
                         break;
                     case 5:
@@ -229,7 +214,8 @@ public class TransactionDisplay {
                         displayCustomSearch(allTransactionList);
                         isValid = true;
                         break;
-                    case 0: return;
+                    case 0:
+                        return;
                     default:
                         console.Deny("Incorrect options. Please try again! ");
                 }
@@ -242,8 +228,13 @@ public class TransactionDisplay {
     }
 
     public void displayList(List<TransactionEntity> entities) {
-        for (TransactionEntity entity : entities) {
-            entity.display();
+        if (!entities.isEmpty()) {
+            displayFormat();
+            for (TransactionEntity entity : entities) {
+                entity.display();
+            }
+        } else {
+            console.Warning("No results were found");
         }
     }
 
@@ -265,14 +256,7 @@ public class TransactionDisplay {
         displayList(searchedList);
     }
 
-    // This method performs a dynamic "Custom Search" by chaining filters based on user input.
-    // For each field (start date, end date, description, vendor, amount):
-    // - If the user enters a value, we filter by that field.
-    // - If left empty, that field is ignored.
-    // This approach allows flexible, multi-criteria searching similar to database querying.
-
     public void displayCustomSearch(List<TransactionEntity> allTransactionList) {
-
         System.out.println("Please enter the fields for filtering\n");
         List<TransactionEntity> filteredList = allTransactionList;
 
@@ -308,7 +292,6 @@ public class TransactionDisplay {
         String vendor = scanner.nextLine().trim();
         filteredList = service.customSearch(vendor, filteredList, "vendor");
 
-
         while (true) {
             System.out.println("Please enter amount or leave empty:");
             String amountInput = scanner.nextLine().trim();
@@ -320,8 +303,9 @@ public class TransactionDisplay {
                 console.Warning("Invalid amount. Try again.");
             }
         }
-        if(filteredList.isEmpty()){
-            console.Information("No search results was found!");
+
+        if (filteredList.isEmpty()) {
+            console.Information("No search results were found!");
         } else {
             console.Information("Here are your custom search results");
             displayFormat();
@@ -331,19 +315,21 @@ public class TransactionDisplay {
         }
     }
 
+    // ------------------------------------------
+    // Helper Methods
+    // ------------------------------------------
+    public void displayFormat() {
+        System.out.printf("\n%-20s %-30s %-12s %-15s\n", "Vendor", "Description", "Amount", "Date");
+        System.out.println("--------------------------------------------------------------------------------");
+    }
+
     private LocalDate parseDateOrNull(String input) {
-        if (input == null || input.isEmpty()) return null; // empty → no parsing
-        return LocalDate.parse(input); // non-empty → parse
+        if (input == null || input.isEmpty()) return null;
+        return LocalDate.parse(input);
     }
 
     private Double parseAmountOrNull(String input) {
         if (input == null || input.isEmpty()) return null;
         return Double.parseDouble(input);
     }
-
-    public void displayFormat(){
-        System.out.printf("\n%-20s %-30s %-12s %-15s\n", "Vendor", "Description", "Amount", "Date");
-        System.out.println("--------------------------------------------------------------------------------");
-    }
-
 }

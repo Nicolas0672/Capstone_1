@@ -1,9 +1,7 @@
 package com.pluralsight;
 
 import java.io.*;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.Month;
+import java.time.*;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 import com.pluralsight.cli.console;
@@ -12,30 +10,45 @@ public class TransactionServices {
 
     private final String fileLocation = "data/transaction.csv";
 
+    // =============================================================
+    // 1. CORE FILE I/O METHODS
+    // =============================================================
+
+    /**
+     * Appends a new transaction record to the CSV file.
+     * Format: date|time|description activity|vendor|amount
+     */
     public void saveToCSV(String description, String vendor, double amount, String activity) {
-        try {
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(fileLocation, true))) {
             LocalDate today = LocalDate.now();
             LocalTime todayTime = LocalTime.now();
 
-            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(fileLocation, true));
-            // Format correctly
-            bufferedWriter.write(String.format("\n%s|%s|%s %s|%s|%.2f", today, todayTime.withNano(0), description, activity, vendor, amount));
-            console.Success("\nCongrats! Your request is completed\n");
+            bufferedWriter.write(String.format(
+                    "\n%s|%s|%s %s|%s|%.2f",
+                    today,
+                    todayTime.withNano(0),
+                    description,
+                    activity,
+                    vendor,
+                    amount
+            ));
 
-            bufferedWriter.close();
+            console.Success("\nCongrats! Your request is completed\n");
 
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
+    /**
+     * Reads all transactions from the CSV file and returns them as TransactionEntity objects.
+     */
     public List<TransactionEntity> readFile() {
         List<TransactionEntity> entityList = new ArrayList<>();
-        // Read data from CSV file
-        try {
-            BufferedReader bufferedReader = new BufferedReader(new FileReader(fileLocation));
-            bufferedReader.readLine();
-            String input = "";
+
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(fileLocation))) {
+            bufferedReader.readLine(); // Skip header if exists
+            String input;
 
             while ((input = bufferedReader.readLine()) != null) {
                 String[] parts = input.split("\\|");
@@ -49,167 +62,188 @@ public class TransactionServices {
         } catch (IOException e) {
             console.Deny("File not found");
         }
+
         return entityList;
     }
 
+    // =============================================================
+    // 2. DISPLAY UTILITIES
+    // =============================================================
+
+    /**
+     * Displays all entities in the provided list.
+     */
     public void displayEntries(List<TransactionEntity> entities) {
         for (TransactionEntity entity : entities) {
             entity.display();
         }
     }
 
-    public List<TransactionEntity> monthToDate(List<TransactionEntity> transactionEntityList) {
-        List<TransactionEntity> monthToDateList = new ArrayList<>();
-        LocalDate today = LocalDate.now();
-        LocalDate firstDayOfMonth = LocalDate.of(today.getYear(), today.getMonth(), 1);
+    // =============================================================
+    // 3. REPORT FILTERS (DATE-BASED)
+    // =============================================================
 
-        // Filtering based on the first day of month and now
-        // Stores all valid entities within range
-        for (TransactionEntity transaction : transactionEntityList) {
+    /**
+     * Returns all transactions from the start of the current month to today.
+     */
+    public List<TransactionEntity> monthToDate(List<TransactionEntity> transactions) {
+        List<TransactionEntity> result = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+        LocalDate firstDayOfMonth = today.withDayOfMonth(1);
+
+        for (TransactionEntity transaction : transactions) {
             LocalDate date = transaction.getDate();
-            if (((date.isAfter(firstDayOfMonth)) || date.isEqual(firstDayOfMonth)) &&
-                    date.isBefore(today) || date.isEqual(today)) {
-                monthToDateList.add(transaction);
+            if ((date.isAfter(firstDayOfMonth) || date.isEqual(firstDayOfMonth))
+                    && (date.isBefore(today) || date.isEqual(today))) {
+                result.add(transaction);
             }
         }
-        return monthToDateList;
+        return result;
     }
 
-    public List<TransactionEntity> yearToDate(List<TransactionEntity> transactionEntityList) {
-        List<TransactionEntity> YearToDateList = new ArrayList<>();
-        LocalDate today = LocalDate.now();
-        LocalDate firstDayOfYear = LocalDate.of(today.getYear() - 1, today.getMonth(), 1);
-
-        // Filtering based on the first day of month and now
-        // Stores all valid entities within range
-        for (TransactionEntity transaction : transactionEntityList) {
-            LocalDate date = transaction.getDate();
-            if (((date.isAfter(firstDayOfYear)) || date.isEqual(firstDayOfYear)) &&
-                    date.isBefore(today) || date.isEqual(today)) {
-                YearToDateList.add(transaction);
-            }
-        }
-        return YearToDateList;
-    }
-
-    public List<TransactionEntity> previousMonth(List<TransactionEntity> transactionEntityList) {
-        List<TransactionEntity> previousMonthList = new ArrayList<>();
+    /**
+     * Returns all transactions from the previous month.
+     */
+    public List<TransactionEntity> previousMonth(List<TransactionEntity> transactions) {
+        List<TransactionEntity> result = new ArrayList<>();
         LocalDate today = LocalDate.now();
 
-        // Check if last month was december
+        Month prevMonth = today.getMonth().minus(1);
         int year = today.getYear();
-        Month month = today.getMonth().minus(-1);
-
-        if (month == Month.DECEMBER) {
-            year = year - 1;
+        if (today.getMonth() == Month.JANUARY) {
+            year -= 1;
+            prevMonth = Month.DECEMBER;
         }
 
-        LocalDate firstDayOfPrevMonth = LocalDate.of(year, month, 1);
-        LocalDate lastDayOfPrevMonth = firstDayOfPrevMonth.withDayOfMonth(firstDayOfPrevMonth.lengthOfMonth());
+        LocalDate firstDayOfPrev = LocalDate.of(year, prevMonth, 1);
+        LocalDate lastDayOfPrev = firstDayOfPrev.withDayOfMonth(firstDayOfPrev.lengthOfMonth());
 
-        for (TransactionEntity transaction : transactionEntityList) {
-            LocalDate date = transaction.getDate();
-            if (((date.isAfter(firstDayOfPrevMonth)) || date.isEqual(firstDayOfPrevMonth)) &&
-                    date.isBefore(lastDayOfPrevMonth) || date.isEqual(lastDayOfPrevMonth)) {
-                previousMonthList.add(transaction);
+        for (TransactionEntity t : transactions) {
+            LocalDate date = t.getDate();
+            if ((date.isAfter(firstDayOfPrev) || date.isEqual(firstDayOfPrev))
+                    && (date.isBefore(lastDayOfPrev) || date.isEqual(lastDayOfPrev))) {
+                result.add(t);
             }
         }
-        return previousMonthList;
+        return result;
     }
 
-    public List<TransactionEntity> previousYear(List<TransactionEntity> transactionEntityList) {
-        List<TransactionEntity> previousYearList = new ArrayList<>();
+    /**
+     * Returns all transactions from the start of the current year to today.
+     */
+    public List<TransactionEntity> yearToDate(List<TransactionEntity> transactions) {
+        List<TransactionEntity> result = new ArrayList<>();
         LocalDate today = LocalDate.now();
+        LocalDate firstDayOfYear = LocalDate.of(today.getYear(), 1, 1);
 
-        // Check if last month was december
-        int year = today.getYear() - 1;
-
-        LocalDate firstDayOfPrevYear = LocalDate.of(year, 1, 31);
-        LocalDate lastDayOfPrevYear = LocalDate.of(year, 12, 31);
-
-        for (TransactionEntity transaction : transactionEntityList) {
+        for (TransactionEntity transaction : transactions) {
             LocalDate date = transaction.getDate();
-            if (((date.isAfter(firstDayOfPrevYear)) || date.isEqual(firstDayOfPrevYear)) &&
-                    date.isBefore(lastDayOfPrevYear) || date.isEqual(lastDayOfPrevYear)) {
-                previousYearList.add(transaction);
+            if ((date.isAfter(firstDayOfYear) || date.isEqual(firstDayOfYear))
+                    && (date.isBefore(today) || date.isEqual(today))) {
+                result.add(transaction);
             }
         }
-        return previousYearList;
+        return result;
     }
-    // Groups transactions by vendor using a HashMap for quick lookup.
-    // Key: Vendor name (uppercase for case-insensitivity)
-    // Value: List of transactions for that vendor.
 
+    /**
+     * Returns all transactions from the previous calendar year.
+     */
+    public List<TransactionEntity> previousYear(List<TransactionEntity> transactions) {
+        List<TransactionEntity> result = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+        int prevYear = today.getYear() - 1;
+
+        LocalDate firstDayOfPrevYear = LocalDate.of(prevYear, 1, 1);
+        LocalDate lastDayOfPrevYear = LocalDate.of(prevYear, 12, 31);
+
+        for (TransactionEntity t : transactions) {
+            LocalDate date = t.getDate();
+            if ((date.isAfter(firstDayOfPrevYear) || date.isEqual(firstDayOfPrevYear))
+                    && (date.isBefore(lastDayOfPrevYear) || date.isEqual(lastDayOfPrevYear))) {
+                result.add(t);
+            }
+        }
+        return result;
+    }
+
+    // =============================================================
+    // 4. SEARCH & CUSTOM FILTERS
+    // =============================================================
+
+    /**
+     * Groups transactions by vendor name (case-insensitive).
+     */
     public Map<String, List<TransactionEntity>> searchByVendor(List<TransactionEntity> newestList) {
-        Map<String, List<TransactionEntity>> transactionMap = new HashMap<>();
-
-        // Populate map with vendor name as keys and entity as value
-        for (TransactionEntity entity : newestList) {
-            // Sensitive check
-            String vendorName = entity.getVendor().toUpperCase();
-            transactionMap.putIfAbsent(vendorName, new ArrayList<>());
-        }
+        Map<String, List<TransactionEntity>> map = new HashMap<>();
 
         for (TransactionEntity entity : newestList) {
-            // Case sensitive check
-            String vendorName = entity.getVendor().toUpperCase();
-            if (transactionMap.containsKey(vendorName)) {
-                transactionMap.get(vendorName).add(entity);
-            }
+            String vendor = entity.getVendor().toUpperCase();
+            map.putIfAbsent(vendor, new ArrayList<>());
+            map.get(vendor).add(entity);
         }
-        return transactionMap;
+        return map;
     }
-    // Core filtering logic for the "Custom Search" feature.
-    // Depending on filterType, it applies appropriate checks:
-    // - startDate / endDate → compare LocalDate
-    // - description / vendor → substring match (case-insensitive)
-    // - amount → numeric equality (within a small tolerance)
-    // Returns a filtered list without modifying the original.
 
-    public List<TransactionEntity> customSearch(String input, List<TransactionEntity> transactionEntityList, String filterType) {
+    /**
+     * Filters transactions dynamically by date, vendor, description, or amount.
+     */
+    public List<TransactionEntity> customSearch(String input, List<TransactionEntity> list, String filterType) {
+        if (input == null || input.isEmpty()) return list;
 
-        if (input == null || input.isEmpty()) {
-            return transactionEntityList; // do not filter
-        }
-
-        List<TransactionEntity> filterFound = new ArrayList<>();
-
-        // Parse once
+        List<TransactionEntity> filtered = new ArrayList<>();
         LocalDate date = isDate(input);
         Double amount = isAmount(input) ? Double.parseDouble(input) : null;
 
-        for (TransactionEntity entity : transactionEntityList) {
+        for (TransactionEntity entity : list) {
             switch (filterType) {
                 case "startDate":
-                    if (date != null && (entity.getDate().isAfter(date) || entity.getDate().isEqual(date))) {
-                        filterFound.add(entity);
-                    }
+                    if (date != null && (entity.getDate().isAfter(date) || entity.getDate().isEqual(date)))
+                        filtered.add(entity);
                     break;
                 case "endDate":
-                    if (date != null && (entity.getDate().isBefore(date) || entity.getDate().isEqual(date))) {
-                        filterFound.add(entity);
-                    }
+                    if (date != null && (entity.getDate().isBefore(date) || entity.getDate().isEqual(date)))
+                        filtered.add(entity);
                     break;
                 case "amount":
-                    if (amount != null && Math.abs(entity.getAmount() - amount) < 0.01) {
-                        filterFound.add(entity);
-                    }
+                    if (amount != null && Math.abs(entity.getAmount() - amount) < 0.01)
+                        filtered.add(entity);
                     break;
                 case "description":
-                    if (entity.getDescription().toLowerCase().contains(input.toLowerCase())) {
-                        filterFound.add(entity);
-                    }
+                    if (entity.getDescription().toLowerCase().contains(input.toLowerCase()))
+                        filtered.add(entity);
                     break;
                 case "vendor":
-                    if (entity.getVendor().toLowerCase().contains(input.toLowerCase())) {
-                        filterFound.add(entity);
-                    }
+                    if (entity.getVendor().toLowerCase().contains(input.toLowerCase()))
+                        filtered.add(entity);
                     break;
             }
         }
 
-        return filterFound;
+        return filtered;
     }
+
+    // =============================================================
+    // 5. PAYMENT CALCULATIONS
+    // =============================================================
+
+    /**
+     * Calculates total amount owed to a vendor based on negative transactions.
+     */
+    public double totalPayment(List<TransactionEntity> ongoingPayments, String vendorName, String description) {
+        double amount = 0;
+        for (TransactionEntity t : ongoingPayments) {
+            if (t.getVendor().equalsIgnoreCase(vendorName)
+                    && t.getDescription().toLowerCase().contains(description.toLowerCase())) {
+                amount += Math.abs(t.getAmount());
+            }
+        }
+        return amount;
+    }
+
+    // =============================================================
+    // 6. PRIVATE HELPER METHODS
+    // =============================================================
 
     private LocalDate isDate(String input) {
         try {
@@ -221,26 +255,10 @@ public class TransactionServices {
 
     private boolean isAmount(String input) {
         try {
-            double amount = Double.parseDouble(input);
+            Double.parseDouble(input);
             return true;
         } catch (NumberFormatException e) {
             return false;
         }
     }
-
-    // Calculates total outstanding payment owed to a specific vendor
-    // by summing all matching negative transactions (case-insensitive).
-    // Used to validate user payment inputs against actual owed amounts.
-
-    public double totalPayment(List<TransactionEntity> ongoingPayments, String vendorName, String description) {
-        double amount = 0;
-        for (TransactionEntity transaction : ongoingPayments) {
-            if (transaction.getVendor().equalsIgnoreCase(vendorName) && transaction.getDescription().toLowerCase().contains(description.toLowerCase())) {
-                amount += Math.abs(transaction.getAmount());
-            }
-        }
-        return amount;
-    }
-
-
 }
