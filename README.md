@@ -70,6 +70,18 @@ data/
 
 Each filter operates on the previous filter's results—narrowing down progressively like real e-commerce sites.
 
+**🔥 Key Points to Mention:**
+- **Compound filtering** — Each filter builds on previous results (not independent)
+- **Real-world UX** — Mimics how Amazon/eBay filters work
+- **Optional criteria** — Empty input skips that filter
+- **Type safety** — Validates dates/amounts before filtering
+- **Performance** — Only filters already-narrowed results
+
+**Example Flow:**
+```
+1000 transactions → Filter by date → 500 → Filter by vendor → 50 → Filter by amount → 15 final results
+```
+
 ```java
 public void displayCustomSearch(List<TransactionEntity> allTransactionList) {
     // Start with all, narrow down with each filter
@@ -138,23 +150,25 @@ public List<TransactionEntity> customSearch(String input,
 }
 ```
 
-**🔥 Key Points to Mention:**
-- **Compound filtering** — Each filter builds on previous results (not independent)
-- **Real-world UX** — Mimics how Amazon/eBay filters work
-- **Optional criteria** — Empty input skips that filter
-- **Type safety** — Validates dates/amounts before filtering
-- **Performance** — Only filters already-narrowed results
-
-**Example Flow:**
-```
-1000 transactions → Filter by date → 500 → Filter by vendor → 50 → Filter by amount → 15 final results
-```
-
 ---
 
 ### 2️⃣ HashMap Vendor Indexing (O(1) Lookup)
 
 Pre-indexes all vendors into a HashMap for instant lookups instead of iterating through the entire list each time.
+
+**🔥 Key Points to Mention:**
+- **Time complexity** — O(1) average lookup vs O(n) linear search
+- **Scalability** — With 10,000 transactions: 1 operation vs 10,000 comparisons
+- **Pre-indexing** — Build once, query many times
+- **Real databases** — This is exactly how SQL indexes work
+- **Trade-off** — More memory for exponential speed gain
+
+**Performance:**
+```
+Traditional: 1,000 transactions × 100 searches = 100,000 operations
+HashMap:     1,000 (index once) + 100 (lookups) = 1,100 operations
+Result:      99% reduction in computational work
+```
 
 ```java
 public Map<String, List<TransactionEntity>> searchByVendor(List<TransactionEntity> newestList) {
@@ -190,6 +204,12 @@ public void displaySearchByVendor(List<TransactionEntity> newestTransactionList)
 }
 ```
 
+---
+
+### 3️⃣ Aggregate Payment Calculation (Business Logic)
+
+Solves the real accounting problem: "If I have multiple outstanding invoices to one vendor, what's my total balance?"
+
 **🔥 Key Points to Mention:**
 - **Time complexity** — O(1) average lookup vs O(n) linear search
 - **Scalability** — With 10,000 transactions: 1 operation vs 10,000 comparisons
@@ -203,12 +223,6 @@ Traditional: 1,000 transactions × 100 searches = 100,000 operations
 HashMap:     1,000 (index once) + 100 (lookups) = 1,100 operations
 Result:      99% reduction in computational work
 ```
-
----
-
-### 3️⃣ Aggregate Payment Calculation (Business Logic)
-
-Solves the real accounting problem: "If I have multiple outstanding invoices to one vendor, what's my total balance?"
 
 ```java
 public double totalPayment(List<TransactionEntity> ongoingPayments, 
@@ -268,12 +282,6 @@ Search: "Amazon" + "Office Supplies"
 
 ---
 
-## 🛠️ Technologies Used
-
-**Java 8+** | **Java Time API** | **File I/O (BufferedReader/Writer)** | **Collections (ArrayList, HashMap)** | **Exception Handling** | **OOP Principles**
-
----
-
 ## 🚀 How to Run
 
 ```bash
@@ -282,18 +290,6 @@ cd financial-transaction-app
 javac -d bin src/com/pluralsight/*.java
 java -cp bin com.pluralsight.Main
 ```
-
----
-
-## 📝 Key Takeaways
-
-This project implements **production-level design patterns**:
-
-1. **Progressive Filtering** — Compound criteria system (not independent filters)
-2. **HashMap Indexing** — O(1) lookups with 99% performance improvement
-3. **Business Logic** — Real accounting scenarios with aggregate calculations
-
-Demonstrates understanding of **data structures, algorithms, complexity analysis, and practical software engineering**.
 
 ---
 
