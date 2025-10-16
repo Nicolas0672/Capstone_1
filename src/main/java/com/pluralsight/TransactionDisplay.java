@@ -11,6 +11,7 @@ public class TransactionDisplay {
     private final Scanner scanner = new Scanner(System.in);
     private final List<TransactionEntity> transactionEntityList;
 
+
     // ------------------------------------------
     // Constructor
     // ------------------------------------------
@@ -105,19 +106,20 @@ public class TransactionDisplay {
 
                 double totalPayment = service.totalPayment(ongoingPayments, vendorName, description);
                 if (totalPayment == 0) {
-                    console.Warning("Vendor name not found! Please try again\n");
-                } else if (totalPayment - amount < 0) {
-                    console.Warning("You have exceeded total payment amount! Please try again\n");
+                    console.Warning("Vendor name not found! Please try again");
                 } else {
                     console.Information("Total amount owed for %s: %.2f", vendorName, totalPayment);
                     System.out.print("Please enter your payment: ");
                     amount = scanner.nextDouble();
                     scanner.nextLine();
-                    console.Information("Remaining amount: %.2f", amount - totalPayment);
-                    amount -= totalPayment;
-                    isValid = true;
+                    if (totalPayment - amount < 0) {
+                        console.Warning("You have exceeded total payment amount! Please try again");
+                    } else {
+                        console.Information("Remaining amount: %.2f", amount - totalPayment);
+                        amount -= totalPayment;
+                        isValid = true;
+                    }
                 }
-
             } catch (NumberFormatException e) {
                 console.Deny("Please enter a number");
             }
