@@ -52,7 +52,7 @@ public class TransactionDisplay {
     // ------------------------------------------
     public void depositDisplay() {
         boolean isValid = false;
-        System.out.println("\nPlease enter your name: ");
+        System.out.println("\nPlease enter deposit name: ");
         String name = scanner.nextLine().trim();
         System.out.println("Please describe the purpose of this deposit:");
         String invoice = scanner.nextLine().trim();
@@ -70,8 +70,9 @@ public class TransactionDisplay {
                     isValid = true;
                 }
 
-            } catch (NumberFormatException e) {
+            } catch (InputMismatchException e) {
                 console.Deny("Wrong format. Please enter in numbers");
+                scanner.nextLine();
             }
         }
         service.saveToCSV(invoice, name, depositAmount, "deposit");
