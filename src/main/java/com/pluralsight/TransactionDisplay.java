@@ -121,8 +121,9 @@ public class TransactionDisplay {
                         isValid = true;
                     }
                 }
-            } catch (NumberFormatException e) {
+            } catch (InputMismatchException e) {
                 console.Deny("Please enter a number");
+                scanner.nextLine();
             }
         }
         service.saveToCSV(description, vendorName, amount, amount == 0 ? "paid" : "payment");
@@ -305,7 +306,7 @@ public class TransactionDisplay {
                 Double amount = parseAmountOrNull(amountInput);
                 filteredList = service.customSearch(amountInput, filteredList, "amount");
                 break;
-            } catch (NumberFormatException e) {
+            } catch (InputMismatchException e) {
                 console.Warning("Invalid amount. Try again.");
             }
         }
