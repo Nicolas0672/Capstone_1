@@ -204,6 +204,54 @@ public void displaySearchByVendor(List<TransactionEntity> newestTransactionList)
 ```
 ---
 
+## 🗓️ Date-Based Report Logic (Handling Edge Cases)
+
+Generating accurate **Previous Month Reports** isn’t as simple as subtracting 1 from the current month — especially when crossing the **December → January** boundary.  
+This logic ensures your financial reports remain correct regardless of the current date.
+
+### 🧩 Challenge
+
+When the current month is **January**, the *previous month* is **December of the previous year**, not month `0` of the same year.
+
+Without careful handling, this would cause:
+- Invalid date calculations
+- Incorrect report ranges
+- Missing transactions from December
+
+### ✅ Solution
+
+The following method determines the **first and last day of the previous month**, automatically adjusting the year when needed.
+
+```java
+public List<TransactionEntity> previousMonth(List<TransactionEntity> transactions) {
+    List<TransactionEntity> result = new ArrayList<>();
+    LocalDate today = LocalDate.now();
+
+    // Get the previous month (and adjust year if we're in January)
+    Month prevMonth = today.getMonth().minus(1);
+    int year = today.getYear();
+
+    if (today.getMonth() == Month.JANUARY) {
+        year -= 1;                   // Move back one year
+        prevMonth = Month.DECEMBER;  // Previous month becomes December
+    }
+
+    LocalDate firstDayOfPrev = LocalDate.of(year, prevMonth, 1);
+    LocalDate lastDayOfPrev = firstDayOfPrev.withDayOfMonth(firstDayOfPrev.lengthOfMonth());
+
+    // Filter only transactions within that date range
+    for (TransactionEntity t : transactions) {
+        LocalDate date = t.getDate();
+        if ((date.isAfter(firstDayOfPrev) || date.isEqual(firstDayOfPrev)) &&
+            (date.isBefore(lastDayOfPrev) || date.isEqual(lastDayOfPrev))) {
+            result.add(t);
+        }
+    }
+    return result;
+}
+
+---
+
 ## 🚀 How to Run
 
 ```bash
