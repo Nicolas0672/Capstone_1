@@ -108,6 +108,8 @@ public class TransactionServices {
         List<TransactionEntity> result = new ArrayList<>();
         LocalDate today = LocalDate.now();
 
+
+        // Checks if the current month is January. If so, change the year to last year
         Month prevMonth = today.getMonth().minus(1);
         int year = today.getYear();
         if (today.getMonth() == Month.JANUARY) {
@@ -195,6 +197,7 @@ public class TransactionServices {
         LocalDate date = isDate(input);
         Double amount = isAmount(input) ? Double.parseDouble(input) : null;
 
+        // Filtering process ensuring that each input isn't null
         for (TransactionEntity entity : list) {
             switch (filterType) {
                 case "startDate":

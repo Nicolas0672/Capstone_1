@@ -132,11 +132,13 @@ public class TransactionDisplay {
     // ------------------------------------------
     public void displayLedger() {
         List<TransactionEntity> allTransactionEntityList = service.readFile();
+        // Sort it by newest date first
         allTransactionEntityList.sort(Comparator.comparing(TransactionEntity::getDate).reversed());
 
         List<TransactionEntity> remainingTransactionPayments = new ArrayList<>();
         List<TransactionEntity> depositTransactionList = new ArrayList<>();
 
+        // Filtering which transaction is a payment or deposit from the last index
         for (TransactionEntity entity : allTransactionEntityList) {
             String description = entity.getDescription();
             String[] parts = description.split(" ");
@@ -266,6 +268,7 @@ public class TransactionDisplay {
             System.out.println("Please enter start date (YYYY-MM-DD) or leave empty:");
             String startInput = scanner.nextLine().trim();
             try {
+                // Check if it's parsable to enable throwing the correct error
                 LocalDate startDate = parseDateOrNull(startInput);
                 filteredList = service.customSearch(startInput, filteredList, "startDate");
                 break;
