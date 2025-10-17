@@ -70,6 +70,18 @@ data/
 
 Each filter operates on the previous filter's results—narrowing down progressively like real e-commerce sites.
 
+**🔥 Key Points to Mention:**
+- **Compound filtering** — Each filter builds on previous results (not independent)
+- **Real-world UX** — Mimics how Amazon/eBay filters work
+- **Optional criteria** — Empty input skips that filter
+- **Type safety** — Validates dates/amounts before filtering
+- **Performance** — Only filters already-narrowed results
+
+**Example Flow:**
+```
+1000 transactions → Filter by date → 500 → Filter by vendor → 50 → Filter by amount → 15 final results
+```
+
 ```java
 public void displayCustomSearch(List<TransactionEntity> allTransactionList) {
     // Start with all, narrow down with each filter
@@ -138,23 +150,24 @@ public List<TransactionEntity> customSearch(String input,
 }
 ```
 
-**🔥 Key Points to Mention:**
-- **Compound filtering** — Each filter builds on previous results (not independent)
-- **Real-world UX** — Mimics how Amazon/eBay filters work
-- **Optional criteria** — Empty input skips that filter
-- **Type safety** — Validates dates/amounts before filtering
-- **Performance** — Only filters already-narrowed results
-
-**Example Flow:**
-```
-1000 transactions → Filter by date → 500 → Filter by vendor → 50 → Filter by amount → 15 final results
-```
-
 ---
 
 ### 2️⃣ HashMap Vendor Indexing (O(1) Lookup)
 
 Pre-indexes all vendors into a HashMap for instant lookups instead of iterating through the entire list each time.
+
+**🔥 Key Points to Mention:**
+- **Time complexity** — O(1) average lookup vs O(n) linear search
+- **Scalability** — With 10,000 transactions: 1 operation vs 10,000 comparisons
+- **Pre-indexing** — Build once, query many times
+- **Trade-off** — More memory for exponential speed gain
+
+**Performance:**
+```
+Traditional: 1,000 transactions × 100 searches = 100,000 operations
+HashMap:     1,000 (index once) + 100 (lookups) = 1,100 operations
+Result:      99% reduction in computational work
+```
 
 ```java
 public Map<String, List<TransactionEntity>> searchByVendor(List<TransactionEntity> newestList) {
@@ -189,88 +202,54 @@ public void displaySearchByVendor(List<TransactionEntity> newestTransactionList)
     }
 }
 ```
-
-**🔥 Key Points to Mention:**
-- **Time complexity** — O(1) average lookup vs O(n) linear search
-- **Scalability** — With 10,000 transactions: 1 operation vs 10,000 comparisons
-- **Pre-indexing** — Build once, query many times
-- **Real databases** — This is exactly how SQL indexes work
-- **Trade-off** — More memory for exponential speed gain
-
-**Performance:**
-```
-Traditional: 1,000 transactions × 100 searches = 100,000 operations
-HashMap:     1,000 (index once) + 100 (lookups) = 1,100 operations
-Result:      99% reduction in computational work
-```
-
 ---
 
-### 3️⃣ Aggregate Payment Calculation (Business Logic)
+## 🗓️ Date-Based Report Logic (Handling Edge Cases)
 
-Solves the real accounting problem: "If I have multiple outstanding invoices to one vendor, what's my total balance?"
+Generating accurate **Previous Month Reports** isn’t as simple as subtracting 1 from the current month — especially when crossing the **December → January** boundary.  
+This logic ensures your financial reports remain correct regardless of the current date.
+
+### 🧩 Challenge
+
+When the current month is **January**, the *previous month* is **December of the previous year**, not month `0` of the same year.
+
+Without careful handling, this would cause:
+- Invalid date calculations
+- Incorrect report ranges
+- Missing transactions from December
+
+### ✅ Solution
+
+The following method determines the **first and last day of the previous month**, automatically adjusting the year when needed.
 
 ```java
-public double totalPayment(List<TransactionEntity> ongoingPayments, 
-                          String vendorName, 
-                          String description) {
-    double amount = 0;
-    
-    for (TransactionEntity transaction : ongoingPayments) {
-        // AND condition: Both vendor AND description must match
-        if (transaction.getVendor().equalsIgnoreCase(vendorName) && 
-            transaction.getDescription().toLowerCase().contains(description.toLowerCase())) {
-            amount += Math.abs(transaction.getAmount()); // Payments are negative
+public List<TransactionEntity> previousMonth(List<TransactionEntity> transactions) {
+    List<TransactionEntity> result = new ArrayList<>();
+    LocalDate today = LocalDate.now();
+
+    // Get the previous month (and adjust year if we're in January)
+    Month prevMonth = today.getMonth().minus(1);
+    int year = today.getYear();
+
+    if (today.getMonth() == Month.JANUARY) {
+        year -= 1;                   // Move back one year
+        prevMonth = Month.DECEMBER;  // Previous month becomes December
+    }
+
+    LocalDate firstDayOfPrev = LocalDate.of(year, prevMonth, 1);
+    LocalDate lastDayOfPrev = firstDayOfPrev.withDayOfMonth(firstDayOfPrev.lengthOfMonth());
+
+    // Filter only transactions within that date range
+    for (TransactionEntity t : transactions) {
+        LocalDate date = t.getDate();
+        if ((date.isAfter(firstDayOfPrev) || date.isEqual(firstDayOfPrev)) &&
+            (date.isBefore(lastDayOfPrev) || date.isEqual(lastDayOfPrev))) {
+            result.add(t);
         }
     }
-    return amount;
+    return result;
 }
 ```
-
-**Integration in payment workflow:**
-```java
-// Calculate total owed
-double totalPayment = service.totalPayment(ongoingPayments, vendorName, description);
-
-System.out.printf("Amount Owed: %.2f\nPlease enter your payment amount: ", totalPayment);
-amount = scanner.nextDouble();
-
-// Business validation
-if(totalPayment == 0){
-    System.out.println("Vendor name not found!");
-} else if(amount > totalPayment){
-    System.out.print("You have exceeded total payment amount!");
-} else {
-    amount -= totalPayment;
-    service.saveToCSV(description, vendorName, amount, amount == 0 ? "paid" : "payment");
-}
-```
-
-**🔥 Key Points to Mention:**
-- **Aggregate calculation** — Sums multiple invoices from same vendor
-- **Multi-criteria matching** — Vendor AND description (precise matching)
-- **Data model awareness** — Converts negative values to positive
-- **Business validation** — Prevents overpayment, validates vendor exists
-- **Partial payments** — Tracks remaining balance
-- **Status tracking** — Marks "paid" vs "payment" based on balance
-
-**Real Scenario:**
-```
-Amazon | Office Supplies | -$250.00
-Amazon | Office Supplies | -$180.00
-Amazon | Books           | -$45.00
-
-Search: "Amazon" + "Office Supplies"
-→ Total: $430.00 (Books excluded because description doesn't match)
-→ Pay: $400.00
-→ Remaining: $30.00 outstanding
-```
-
----
-
-## 🛠️ Technologies Used
-
-**Java 8+** | **Java Time API** | **File I/O (BufferedReader/Writer)** | **Collections (ArrayList, HashMap)** | **Exception Handling** | **OOP Principles**
 
 ---
 
@@ -282,18 +261,6 @@ cd financial-transaction-app
 javac -d bin src/com/pluralsight/*.java
 java -cp bin com.pluralsight.Main
 ```
-
----
-
-## 📝 Key Takeaways
-
-This project implements **production-level design patterns**:
-
-1. **Progressive Filtering** — Compound criteria system (not independent filters)
-2. **HashMap Indexing** — O(1) lookups with 99% performance improvement
-3. **Business Logic** — Real accounting scenarios with aggregate calculations
-
-Demonstrates understanding of **data structures, algorithms, complexity analysis, and practical software engineering**.
 
 ---
 
