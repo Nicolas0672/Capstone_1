@@ -30,7 +30,7 @@ public class TransactionDisplay {
 
         while (!hasExit) {
             console.Information("D) Add Deposit\nP) Make Payment(Debit)\nL) Ledger\nX) Exit\n");
-            String input = scanner.nextLine();
+            String input = scanner.nextLine().trim();
 
             if (input.equalsIgnoreCase("D")) {
                 depositDisplay();
@@ -53,9 +53,9 @@ public class TransactionDisplay {
     public void depositDisplay() {
         boolean isValid = false;
         System.out.println("\nPlease enter your name: ");
-        String name = scanner.nextLine();
+        String name = scanner.nextLine().trim();
         System.out.println("Please describe the purpose of this deposit:");
-        String invoice = scanner.nextLine();
+        String invoice = scanner.nextLine().trim();
 
         double depositAmount = 0;
 
@@ -100,9 +100,9 @@ public class TransactionDisplay {
         while (!isValid) {
             try {
                 System.out.print("\nPlease enter the vendor name owed: ");
-                vendorName = scanner.nextLine();
+                vendorName = scanner.nextLine().trim();
                 System.out.print("Please enter description of product owed: ");
-                description = scanner.nextLine();
+                description = scanner.nextLine().trim();
 
                 double totalPayment = service.totalPayment(ongoingPayments, vendorName, description);
                 if (totalPayment == 0) {
@@ -151,7 +151,7 @@ public class TransactionDisplay {
         while (!isValid) {
             System.out.println("Please choose the services provided: \n");
             console.Information("A) All\nD) Deposits\nP) Payments\nR) Reports\n");
-            String input = scanner.nextLine();
+            String input = scanner.nextLine().trim();
 
             if (input.equalsIgnoreCase("A")) {
                 displayFormat();
@@ -246,7 +246,7 @@ public class TransactionDisplay {
         List<TransactionEntity> searchedList = new ArrayList<>();
         while (!isValid) {
             System.out.println("Please enter vendor name you would like to search: ");
-            String input = scanner.nextLine().toUpperCase();
+            String input = scanner.nextLine().toUpperCase().trim();
 
             if (transactionMap.containsKey(input)) {
                 searchedList.addAll(transactionMap.get(input));
